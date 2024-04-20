@@ -1,6 +1,7 @@
 import copy
 import cv2
 from keras.models import load_model, Model
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 from PIL import Image
@@ -39,7 +40,7 @@ def convert_nparray_to_jpg(input: np.ndarray):
 
 
 # display solution on puzzle
-def display_numbers(puzzle: List[List[int]] , solution: List[List[int]], color: Tuple[int] = (0, 255, 0)) -> np.ndarray:
+def display_numbers(puzzle: List[List[int]] , solution: List[List[int]], original_size: Tuple[int], color: List[int] = (0, 255, 0)) -> np.ndarray:
     temp = np.zeros((img_height, img_width, 3), np.uint8)
     width = int(temp.shape[1]/9)
     height = int(temp.shape[0]/9)
@@ -49,6 +50,7 @@ def display_numbers(puzzle: List[List[int]] , solution: List[List[int]], color: 
             if prev == 0:
                 val = str(solution[y][x])
                 cv2.putText(temp, val, (x*width+int(width/2)-10, int((y+0.8)*height)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, color, 2, cv2.LINE_AA)
+    temp = cv2.resize(temp, original_size)          
     return temp
 
 
@@ -57,9 +59,11 @@ def find_contours(img: np.ndarray) -> List[np.ndarray]:
     contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     return contours
 
+
 # predict value of each cell
 def get_prediction(boxes: List[np.ndarray], model: Model) -> List[int]:
     result_lst = [[] for _ in range(9)]
+    cells = []
     for idx,image in enumerate(boxes):
         img = np.asarray(image)
         height, width = img.shape[0], img.shape[1]
@@ -68,6 +72,7 @@ def get_prediction(boxes: List[np.ndarray], model: Model) -> List[int]:
         img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 5, 5)
         img = cv2.resize(img, (32, 32))
         img = img / 255
+        cells.append(img)
         img = img.reshape(1, 32, 32, 1)
         pred = model.predict(img)
         prob_idx = np.argmax(pred, axis=1)
@@ -77,31 +82,23 @@ def get_prediction(boxes: List[np.ndarray], model: Model) -> List[int]:
             result_lst[row].append(int(prob_idx[0]+1))
         else:
             result_lst[row].append(0)
-    return result_lst
-
-
-# convert all images into grayscale and equalize histogram
-def img_to_equalized(img: np.ndarray) -> np.ndarray:
-    temp = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    temp = cv2.equalizeHist(img)
-    temp = temp/255
-    return temp
+    return result_lst, cells
 
 
 # create model
 def initialize_prediction_model() -> Model:
-    new_model = load_model(model_path)
-    return new_model
+    return load_model(model_path)
 
 
 # overlay solution
-def overlay_solution(original: np.ndarray, mask: np.ndarray, border: List[np.ndarray]) -> np.ndarray:
+def overlay_solution(original: np.ndarray, mask: np.ndarray, border: List[np.ndarray], original_size: List[int]) -> np.ndarray:
+    orig_width, orig_height = original_size
     temp_mask = copy.deepcopy(mask)
     temp_orig = copy.deepcopy(original)
     pts2 = np.float32(border)
-    pts1 = np.float32([[0, 0], [img_width, 0], [0, img_height], [img_width, img_height]])
+    pts1 = np.float32([[0, 0], [orig_width, 0], [0, orig_height], [orig_width, orig_height]])
     matrix = cv2.getPerspectiveTransform(pts1, pts2)
-    temp_mask = cv2.warpPerspective(mask, matrix, (img_width, img_height))
+    temp_mask = cv2.warpPerspective(temp_mask, matrix, (orig_height, orig_width))
     img_ans = cv2.addWeighted(temp_mask, 1, temp_orig, 0.6, 1)
     return img_ans
 
@@ -115,13 +112,25 @@ def perspective_warp(biggest: List[np.ndarray], img: np.ndarray) -> np.ndarray:
     matrix = cv2.getPerspectiveTransform(pts1, pts2)
     # apply perspective shift
     temp = cv2.warpPerspective(temp, matrix, (img_width, img_height))
-    # temp = cv2.cvtColor(temp, cv2.COLOR_BGR2GRAY)
+    temp = cv2.cvtColor(temp, cv2.COLOR_BGR2GRAY)
     return temp
+
+
+def plot_cells(cells: List[np.ndarray]) -> None:
+    plt.figure(figsize=(12, 12))
+
+    for i in range(0, 81):
+        plt.subplot(9, 9, i + 1)
+        plt.axis('off')
+        plt.imshow(cells[i], cmap='gray')
+
+    plt.show()
 
 
 # preprocessing image
 def preprocess_image(img: np.ndarray) -> np.ndarray:
-    temp = cv2.resize(img, (img_width, img_height))
+    # temp = cv2.resize(img, (img_width, img_height))
+    temp = copy.deepcopy(img)
     temp = cv2.cvtColor(temp, cv2.COLOR_BGR2GRAY)
     temp = cv2.GaussianBlur(temp, (5, 5), 1)
     temp = cv2.adaptiveThreshold(temp, 255, 1, 1, 11, 2)
@@ -149,4 +158,31 @@ def split_boxes(img: np.ndarray) -> List[np.ndarray]:
         for box in cols:
             boxes.append(box)
     return boxes
+
+
+def main():
+    model = initialize_prediction_model()
+    img = cv2.imread("./data/unsolved/3.jpg")
+    img_proc = preprocess_image(img)
+    # find contours
+    contours = find_contours(img_proc)
+    # find outer border
+    border = biggest_contour(contours)
+    border = reorder(border)
+    # apply perspective shift
+    img_persp = perspective_warp(border, img)
+    # split puzzle into cells
+    cells = split_boxes(img_persp)
+    # extract unsolved puzzle
+    unsolved, cells = get_prediction(cells, model)
+
+    for row in unsolved:
+      print(row)
+
+    plot_cells(cells)
+
+
+
+if __name__=="__main__":
+   main()
 
