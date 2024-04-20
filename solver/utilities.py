@@ -115,7 +115,7 @@ def perspective_warp(biggest: List[np.ndarray], img: np.ndarray) -> np.ndarray:
     temp = cv2.cvtColor(temp, cv2.COLOR_BGR2GRAY)
     return temp
 
-
+# plot cells for testing purposes
 def plot_cells(cells: List[np.ndarray]) -> None:
     plt.figure(figsize=(12, 12))
 
@@ -160,29 +160,29 @@ def split_boxes(img: np.ndarray) -> List[np.ndarray]:
     return boxes
 
 
-def main():
-    model = initialize_prediction_model()
-    img = cv2.imread("./data/unsolved/3.jpg")
-    img_proc = preprocess_image(img)
-    # find contours
-    contours = find_contours(img_proc)
-    # find outer border
-    border = biggest_contour(contours)
-    border = reorder(border)
-    # apply perspective shift
-    img_persp = perspective_warp(border, img)
-    # split puzzle into cells
-    cells = split_boxes(img_persp)
-    # extract unsolved puzzle
-    unsolved, cells = get_prediction(cells, model)
+# def main():
+#     model = initialize_prediction_model()
+#     img = cv2.imread("./data/unsolved/3.jpg")
+#     img_proc = preprocess_image(img)
+#     # find contours
+#     contours = find_contours(img_proc)
+#     # find outer border
+#     border = biggest_contour(contours)
+#     border = reorder(border)
+#     # apply perspective shift
+#     img_persp = perspective_warp(border, img)
+#     # split puzzle into cells
+#     cells = split_boxes(img_persp)
+#     # extract unsolved puzzle
+#     unsolved, cells = get_prediction(cells, model)
 
-    for row in unsolved:
-      print(row)
+#     for row in unsolved:
+#       print(row)
 
-    plot_cells(cells)
+#     plot_cells(cells)
 
 
 
-if __name__=="__main__":
-   main()
+# if __name__=="__main__":
+#    main()
 

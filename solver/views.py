@@ -35,29 +35,29 @@ class Sudoku_API(APIView):
       print("loaded image")
       puzzle = request.FILES['puzzle']
     img = convert_file_to_nparray(puzzle)
+    
     # validate that image is compatible with downstream
     # preprocess image
     img_proc = preprocess_image(img)
+
     # find contours
     contours = find_contours(img_proc)
+
     # find outer border
     border = biggest_contour(contours)
     border = reorder(border)
+
     # apply perspective shift
     img_persp = perspective_warp(border, img)
+
     # split puzzle into cells
     cells = split_boxes(img_persp)
+
     # extract unsolved puzzle
     unsolved, _ = get_prediction(cells, self.model)
 
-    for row in unsolved:
-      print(row)
     # solve board
-
-    print("attempt solve")
     solved = solve_board(test_puzzle)
-    # for row in solved:
-    #   print(row)
 
     # overlay solution to input image
     img_mask = display_numbers(unsolved, solved, img.shape[:-1])
