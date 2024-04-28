@@ -1,0 +1,22 @@
+
+# Ignore Python bytecode files
+*.pyc
+
+# Ignore version control system directories
+.git
+svn
+
+# Ignore temporary files
+*.swp
+*~
+
+# Ignore Django media and static files if they are served separately
+/media
+/static
+
+# Ignore database files (if they are not managed by migrations)
+*.sqlite3
+*.db
+
+.venv
+.idea
