@@ -1,4 +1,3 @@
-import copy
 from django.test import SimpleTestCase
 import unittest
 import yaml
@@ -12,6 +11,7 @@ with open("./data/data/data.yaml", "r") as file:
     data = yaml.safe_load(file)
 
 test_unsolved_string = data["test_unsolved_string"]
+test_unsolvable = data['test_unsolvable']
 test_unsolved = data["test_unsolved"]
 test_solved = data["test_solved"]
 test_incorrect = data["test_incorrect"]
@@ -41,6 +41,7 @@ class ConvertBoardTestCase(SimpleTestCase):
 
 
 class SudokuClassTestCase(SimpleTestCase):
+    unsolvable = test_unsolvable
     unsolved = test_unsolved
     solved = test_solved
     incorrect = test_incorrect
@@ -98,3 +99,14 @@ class SudokuClassTestCase(SimpleTestCase):
         self.assertEqual(bool_unsolved, False)
         self.assertEqual(bool_solved, True)
         self.assertEqual(bool_incorrect, False)
+
+    @unittest.skip("Skipping this test method")
+    def test_solve_board(self):
+        """Does unsolved puzzle return solved puzzle? Does unsolvable puzzle return None?"""
+        solved0 = solve_board(self.unsolved)
+        solved1 = solve_board(self.solved)
+        failed = solve_board(self.unsolvable)
+        self.assertEqual(solved0, self.solved)
+        self.assertEqual(solved1, self.solved)
+        self.assertIsNone(failed)
+

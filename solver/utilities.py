@@ -5,14 +5,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from PIL import Image
+import tensorflow as tf
 from typing import List, Tuple
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 ########################################################################
 img_height = 450
 img_width = 450
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-model_path = os.path.join(BASE_DIR, 'solver/model_trained_10_3.keras')
+model_path = os.path.join(BASE_DIR, "solver/model_trained_10_3.keras")
 ########################################################################
+
 
 # find biggest contour
 def biggest_contour(contours: List[np.ndarray]) -> np.ndarray:
@@ -36,21 +40,35 @@ def convert_file_to_nparray(file) -> np.ndarray:
 
 # convert image from numpy array into jpg
 def convert_nparray_to_jpg(input: np.ndarray):
-    return cv2.imencode('.jpg', input)[1].tobytes()
+    return cv2.imencode(".jpg", input)[1].tobytes()
 
 
 # display solution on puzzle
-def display_numbers(puzzle: List[List[int]] , solution: List[List[int]], original_size: Tuple[int], color: List[int] = (0, 255, 0)) -> np.ndarray:
+def display_numbers(
+    puzzle: List[List[int]],
+    solution: List[List[int]],
+    original_size: Tuple[int],
+    color: List[int] = (0, 255, 0),
+) -> np.ndarray:
     temp = np.zeros((img_height, img_width, 3), np.uint8)
-    width = int(temp.shape[1]/9)
-    height = int(temp.shape[0]/9)
+    width = int(temp.shape[1] / 9)
+    height = int(temp.shape[0] / 9)
     for x in range(0, 9):
         for y in range(0, 9):
             prev = puzzle[y][x]
             if prev == 0:
                 val = str(solution[y][x])
-                cv2.putText(temp, val, (x*width+int(width/2)-10, int((y+0.8)*height)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, color, 2, cv2.LINE_AA)
-    temp = cv2.resize(temp, original_size)          
+                cv2.putText(
+                    temp,
+                    val,
+                    (x * width + int(width / 2) - 10, int((y + 0.8) * height)),
+                    cv2.FONT_HERSHEY_COMPLEX_SMALL,
+                    2,
+                    color,
+                    2,
+                    cv2.LINE_AA,
+                )
+    temp = cv2.resize(temp, original_size)
     return temp
 
 
@@ -64,22 +82,27 @@ def find_contours(img: np.ndarray) -> List[np.ndarray]:
 def get_prediction(boxes: List[np.ndarray], model: Model) -> List[int]:
     result_lst = [[] for _ in range(9)]
     cells = []
-    for idx,image in enumerate(boxes):
+    tf.get_logger().setLevel('ERROR')
+    for idx, image in enumerate(boxes):
         img = np.asarray(image)
         height, width = img.shape[0], img.shape[1]
-        h_ten, w_ten = height//7, width//7
-        img = img[h_ten:height - h_ten, w_ten:width-w_ten]
-        img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 5, 5)
+        h_ten, w_ten = height // 7, width // 7
+        img = img[h_ten : height - h_ten, w_ten : width - w_ten]
+        img = cv2.adaptiveThreshold(
+            img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 5, 5
+        )
         img = cv2.resize(img, (32, 32))
         img = img / 255
         cells.append(img)
         img = img.reshape(1, 32, 32, 1)
-        pred = model.predict(img)
+        # pred = model.predict(img)
+        with tf.device('/cpu:0'): 
+            pred = model.predict(img, verbose=0)
         prob_idx = np.argmax(pred, axis=1)
         prob_hgh = pred[0, prob_idx][0]
         row = idx // 9
         if prob_hgh > 0.8:
-            result_lst[row].append(int(prob_idx[0]+1))
+            result_lst[row].append(int(prob_idx[0] + 1))
         else:
             result_lst[row].append(0)
     return result_lst, cells
@@ -91,12 +114,19 @@ def initialize_prediction_model() -> Model:
 
 
 # overlay solution
-def overlay_solution(original: np.ndarray, mask: np.ndarray, border: List[np.ndarray], original_size: List[int]) -> np.ndarray:
+def overlay_solution(
+    original: np.ndarray,
+    mask: np.ndarray,
+    border: List[np.ndarray],
+    original_size: List[int],
+) -> np.ndarray:
     orig_width, orig_height = original_size
     temp_mask = copy.deepcopy(mask)
     temp_orig = copy.deepcopy(original)
     pts2 = np.float32(border)
-    pts1 = np.float32([[0, 0], [orig_width, 0], [0, orig_height], [orig_width, orig_height]])
+    pts1 = np.float32(
+        [[0, 0], [orig_width, 0], [0, orig_height], [orig_width, orig_height]]
+    )
     matrix = cv2.getPerspectiveTransform(pts1, pts2)
     temp_mask = cv2.warpPerspective(temp_mask, matrix, (orig_height, orig_width))
     img_ans = cv2.addWeighted(temp_mask, 1, temp_orig, 0.6, 1)
@@ -108,12 +138,15 @@ def perspective_warp(biggest: List[np.ndarray], img: np.ndarray) -> np.ndarray:
     temp = copy.deepcopy(img)
     # make transformation matrix
     pts1 = np.float32(biggest)
-    pts2 = np.float32([[0, 0], [img_width, 0], [0, img_height], [img_width, img_height]])
+    pts2 = np.float32(
+        [[0, 0], [img_width, 0], [0, img_height], [img_width, img_height]]
+    )
     matrix = cv2.getPerspectiveTransform(pts1, pts2)
     # apply perspective shift
     temp = cv2.warpPerspective(temp, matrix, (img_width, img_height))
     temp = cv2.cvtColor(temp, cv2.COLOR_BGR2GRAY)
     return temp
+
 
 # plot cells for testing purposes
 def plot_cells(cells: List[np.ndarray]) -> None:
@@ -121,8 +154,8 @@ def plot_cells(cells: List[np.ndarray]) -> None:
 
     for i in range(0, 81):
         plt.subplot(9, 9, i + 1)
-        plt.axis('off')
-        plt.imshow(cells[i], cmap='gray')
+        plt.axis("off")
+        plt.imshow(cells[i], cmap="gray")
 
     plt.show()
 
@@ -135,6 +168,7 @@ def preprocess_image(img: np.ndarray) -> np.ndarray:
     temp = cv2.GaussianBlur(temp, (5, 5), 1)
     temp = cv2.adaptiveThreshold(temp, 255, 1, 1, 11, 2)
     return temp
+
 
 # reorder points for Warp Perspective
 def reorder(points: List[np.ndarray]) -> List[np.ndarray]:
@@ -180,9 +214,3 @@ def split_boxes(img: np.ndarray) -> List[np.ndarray]:
 #       print(row)
 
 #     plot_cells(cells)
-
-
-
-# if __name__=="__main__":
-#    main()
-

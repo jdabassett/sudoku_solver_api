@@ -117,7 +117,7 @@ class Sudoku:
 
             while not possibilities:
                 if not solution:
-                    print('Failed to find solution due to empty solution stack')
+                    # print('Failed to find solution due to empty solution stack')
                     return None
                 # backtrack adding attempted squares back minus n
                 heapq.heappush(heap, (count + 1, len(possibilities), i, j, k))
