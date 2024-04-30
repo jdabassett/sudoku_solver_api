@@ -1,6 +1,7 @@
 import copy
 import cv2
 from keras.models import load_model, Model
+from io import BytesIO
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -192,6 +193,12 @@ def split_boxes(img: np.ndarray) -> List[np.ndarray]:
         for box in cols:
             boxes.append(box)
     return boxes
+
+def create_mock_image(width, height, color=(255,255,255)): 
+    image = Image.new("RGB", (width, height), color)
+    image_bytes = BytesIO()
+    image.save(image_bytes, format="JPEG")
+    return image_bytes.getvalue()
 
 
 # def main():

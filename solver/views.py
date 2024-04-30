@@ -26,12 +26,11 @@ class Sudoku_API(APIView):
 
     def post(self, request):
         try:
-            response_data = {
-                'image': None,  
+            response_data = { 
                 'message': "",
                 'error': "",
             }
-            print("View")
+            # print("View")
             # get image from request
             if "puzzle" not in request.FILES:
                 response_data['message'] = "Puzzle file not supplied."
@@ -41,11 +40,11 @@ class Sudoku_API(APIView):
                     status=400,
                 )
 
-            print("Puzzle")
+            # print("Puzzle")
             # extract unsolved puzzle from request
             puzzle = request.FILES["puzzle"]
 
-            print("Puzzle Type")
+            # print("Puzzle Type")
             # reject incorrect file types
             if not puzzle.name.lower().endswith((".jpg", ".jpeg", ".png")):
                 response_data['message'] = "Invalid file type, image must be a JPEG or PNG file."
@@ -55,31 +54,32 @@ class Sudoku_API(APIView):
                     status=400,
                 )
 
-            print("Convert")
+            # print("Convert")
             try:
                 # convert image into nparray
                 puzzle_read = puzzle.read()
                 img = convert_file_to_nparray(puzzle_read)
             except Exception as e:
+                response_data['message'] = "Failed to convert file to numpy array."
+                response_data['error'] = str(e)
                 return HttpResponse(
-                    {
-                        "message": "Failed to convert file to numpy array",
-                        "error": str(e),
-                    },
+                    json.dumps(response_data),
                     status=400,
                 )
 
-            print("Process")
+            # print("Process")
             try:
                 # preprocess image
                 img_proc = preprocess_image(img)
             except Exception as e:
+                response_data['message'] = "Failed to process image."
+                response_data['error'] = str(e)
                 return HttpResponse(
-                    {"message": "Failed to preprocess image.", "error": str(e)},
+                    json.dumps(response_data),
                     status=400,
                 )
 
-            print("Border")
+            # print("Border")
             try:
                 # find contours
                 contours = find_contours(img_proc)
@@ -87,55 +87,54 @@ class Sudoku_API(APIView):
                 border = biggest_contour(contours)
                 border = reorder(border)
             except Exception as e:
+                response_data['message'] = "Failed to find borders of sudoku puzzle."
+                response_data['error'] = str(e)
                 return HttpResponse(
-                    {"message": "Failed to find borders of puzzle.", "error": str(e)},
+                    json.dumps(response_data),
                     status=400,
                 )
 
-            print("Perspective")
+            # print("Perspective")
             try:
                 # apply perspective shift
                 img_persp = perspective_warp(border, img)
                 # split puzzle into cells
                 cells = split_boxes(img_persp)
             except Exception as e:
+                response_data['message'] = "Failed to locate each square of the puzzle."
+                response_data['error'] = str(e)
                 return HttpResponse(
-                    {
-                        "message": "Failed to locate each square of the sudoku puzzle.",
-                        "error": str(e),
-                    },
+                    json.dumps(response_data),
                     status=400,
                 )
      
-            print("Predict")
+            # print("Predict")
             try:
                 # extract unsolved puzzle
                 unsolved, _ = get_prediction(cells, self.model)
             except Exception as e:
+                response_data['message'] = "Failed to predict every square of the puzzle."
+                response_data['error'] = str(e)
                 return HttpResponse(
-                    {
-                        "message": "Failed to make prediction of each square in puzzle.",
-                        "error": str(e),
-                    },
+                    json.dumps(response_data),
                     status=400,
                 )
 
-            print("Solve")
+            # print("Solve")
             try:
                 # solve board
                 solved = solve_board(unsolved)
                 if solved is None:
                     raise ValueError("Puzzle input could not be solved")
             except Exception as e:
+                response_data['message'] = "Puzzle unsolvable."
+                response_data['error'] = str(e)
                 return HttpResponse(
-                    {
-                        "message": "Failed to generate solution to puzzle.",
-                        "error": str(e),
-                    },
+                    json.dumps(response_data),
                     status=400,
                 )
 
-            print("Overlay")
+            # print("Overlay")
             try:
                 # overlay solution to input image
                 img_mask = display_numbers(unsolved, solved, img.shape[:-1])
@@ -149,21 +148,23 @@ class Sudoku_API(APIView):
                     status=400,
                 )
 
-            print("Convert back")
+            # print("Convert back")
             try:
                 # convert from np.ndarray to jpg
                 img_jpg = convert_nparray_to_jpg(img_ans)
             except Exception as e:
+                response_data['message'] = "Failed to convert solved puzzle into JPG."
+                response_data['error'] = str(e)
                 return HttpResponse(
-                    {
-                        "message": "Failed to convert solved puzzle into JPEG.",
-                        "error": str(e),
-                    },
+                    json.dumps(response_data),
                     status=400,
                 )
 
             return HttpResponse(img_jpg, content_type="image/jpeg", status=200)
         except Exception as e:
-            return HttpResponse(
-                {"message": "An unexpected error occurred", "error": str(e)}, status=500
-            )
+                response_data['message'] = "Unexpected error."
+                response_data['error'] = str(e)
+                return HttpResponse(
+                    json.dumps(response_data),
+                    status=500,
+                )
