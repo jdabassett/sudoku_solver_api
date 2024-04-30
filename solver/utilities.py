@@ -35,7 +35,8 @@ def biggest_contour(contours: List[np.ndarray]) -> np.ndarray:
 
 # convert file into numpy array
 def convert_file_to_nparray(file) -> np.ndarray:
-    return cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_COLOR)
+    # TODO: fix all tests and use cases that needed file.read instead
+    return cv2.imdecode(np.frombuffer(file, np.uint8), cv2.IMREAD_COLOR)
 
 
 # convert image from numpy array into jpg

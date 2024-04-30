@@ -40,7 +40,7 @@ class Sudoku_API(APIView):
             # extract unsolved puzzle from request
             puzzle = request.FILES["puzzle"]
 
-            print("Image Type")
+            print("Puzzle Type")
             # reject incorrect file types
             if not puzzle.name.lower().endswith((".jpg", ".jpeg", ".png")):
                 return HttpResponse(
@@ -74,7 +74,7 @@ class Sudoku_API(APIView):
                     status=400,
                 )
 
-            print("Borders")
+            print("Border")
             try:
                 # find contours
                 contours = find_contours(img_proc)
@@ -87,7 +87,7 @@ class Sudoku_API(APIView):
                     status=400,
                 )
 
-            print("Perspective and Spliting")
+            print("Perspective")
             try:
                 # apply perspective shift
                 img_persp = perspective_warp(border, img)
@@ -101,7 +101,8 @@ class Sudoku_API(APIView):
                     },
                     status=400,
                 )
-            print("Make Predictions")
+     
+            print("Predict")
             try:
                 # extract unsolved puzzle
                 unsolved, _ = get_prediction(cells, self.model)
@@ -113,7 +114,8 @@ class Sudoku_API(APIView):
                     },
                     status=400,
                 )
-            print("Solve Board")
+
+            print("Solve")
             try:
                 # solve board
                 solved = solve_board(unsolved)
@@ -126,7 +128,7 @@ class Sudoku_API(APIView):
                     status=400,
                 )
 
-            print("Overlay Solution")
+            print("Overlay")
             try:
                 # overlay solution to input image
                 img_mask = display_numbers(unsolved, solved, img.shape[:-1])
@@ -140,7 +142,7 @@ class Sudoku_API(APIView):
                     status=400,
                 )
 
-            print("Convert Back")
+            print("Convert back")
             try:
                 # convert from np.ndarray to jpg
                 img_jpg = convert_nparray_to_jpg(img_ans)

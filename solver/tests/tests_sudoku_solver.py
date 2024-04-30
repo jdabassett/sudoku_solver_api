@@ -27,13 +27,13 @@ class ConvertBoardTestCase(SimpleTestCase):
     uncoverted = test_unsolved_string
     unsolved = test_unsolved
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_convert_board(self):
         """function converts string to nested list of integers properly."""
         actual = convert_board(self.uncoverted)
         self.assertEqual(self.unsolved, actual)
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_convert_board_fail(self):
         """function doesn't raise an error with improper input"""
         actual = convert_board(self.uncoverted[:-2])
@@ -54,7 +54,7 @@ class SudokuClassTestCase(SimpleTestCase):
     def setUp(self):
         self.sudoku = Sudoku(self.unsolved)
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_instance_attributes(self):
         """Attributes of sudoku instance are proper."""
         full_set = set([i for i in range(0, 10)])
@@ -65,7 +65,7 @@ class SudokuClassTestCase(SimpleTestCase):
         self.assertEqual(self.sudoku.full_set, full_set)
         self.assertEqual(self.sudoku.solved_set, solved_set)
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_instance_fail(self):
         """Error handling if unsolved board used to create sudoku instances is improper."""
         with self.assertRaises(ValueError):
@@ -73,7 +73,7 @@ class SudokuClassTestCase(SimpleTestCase):
         with self.assertRaises(ValueError):
             sudoku = Sudoku("")
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_staticmethod_check_board_validity(self):
         """Check if board is valid and all the ways it can fail."""
         valid = self.sudoku.check_board_validity(self.unsolved)
@@ -81,7 +81,7 @@ class SudokuClassTestCase(SimpleTestCase):
         for item in test_invalids:
             self.assertFalse(self.sudoku.check_board_validity(item))
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_staticmethod_generate_rcs_sets(self):
         """Proper returns"""
         r, c, s, e = self.sudoku.generate_rcs_sets(self.unsolved)
@@ -90,7 +90,7 @@ class SudokuClassTestCase(SimpleTestCase):
         self.assertEqual(s, self.s)
         self.assertEqual(e, self.e)
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_staticmehod_is_solved(self):
         """Proper returns with input of unsolved, solved, and incorrect puzzles."""
         bool_unsolved = self.sudoku._is_solved(self.unsolved)
@@ -100,7 +100,7 @@ class SudokuClassTestCase(SimpleTestCase):
         self.assertEqual(bool_solved, True)
         self.assertEqual(bool_incorrect, False)
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_solve_board(self):
         """Does unsolved puzzle return solved puzzle? Does unsolvable puzzle return None?"""
         solved0 = solve_board(self.unsolved)

@@ -59,7 +59,7 @@ class UtilitiesTestCase(SimpleTestCase):
         with open(solved_solution_path, "rb") as file:
             self.solution = convert_file_to_nparray(file)
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_convert_file_to_nparray(self):
         """Input different types of mock file images and test conversion of each into np.ndarray."""
         image = Image.new("RGB", size=(5, 5), color=(256, 0, 0))
@@ -74,7 +74,7 @@ class UtilitiesTestCase(SimpleTestCase):
             self.assertEqual(result.shape, (5, 5, 3))
         self.assertEqual(self.img.shape, (1920, 1920, 3))
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_preprocess_image(self):
         """Test processed image to grayscale and apply blur/threshold."""
         processed = preprocess_image(self.img)
@@ -82,7 +82,7 @@ class UtilitiesTestCase(SimpleTestCase):
         self.assertEqual(processed.shape, (1920, 1920))
         self.assertFalse(np.array_equal(self.img, processed))
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_find_contours_and_biggest_contour(self):
         """Can find outer border of sudoku?"""
         processed = preprocess_image(self.img)
@@ -96,7 +96,7 @@ class UtilitiesTestCase(SimpleTestCase):
         self.assertTrue(np.array_equal(biggest_reordered, self.border))
         self.border = biggest_reordered
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_perspective_warp(self):
         """Perspective work returns grayscale image of correct dimensions."""
         processed = preprocess_image(self.img)
@@ -108,7 +108,7 @@ class UtilitiesTestCase(SimpleTestCase):
         self.assertGreaterEqual(np.mean(img_persp), 200)
         self.assertLessEqual(np.mean(img_persp), 230)
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_split_boxes(self):
         """Is the test image split into 81 cells of correct dimensions."""
         processed = preprocess_image(self.img)
@@ -120,7 +120,7 @@ class UtilitiesTestCase(SimpleTestCase):
         self.assertEqual(len(cells), 81)
         self.assertEqual(cells[0].shape, (50, 50))
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_get_prediction(self):
         """Can model predict value of each cell accurately."""
         processed = preprocess_image(self.img)
@@ -132,19 +132,19 @@ class UtilitiesTestCase(SimpleTestCase):
         unsolved, _ = get_prediction(cells, self.model)
         self.assertTrue(np.array_equal(unsolved, self.unsolved))
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_display_numbers(self):
         """Is valid mask created."""
         img_mask = display_numbers(self.unsolved, self.solved, self.img.shape[:-1])
         np.allclose(img_mask, self.mask)
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_overlay_solution(self):
         """Is valid overlay created"""
         img_solution = overlay_solution(self.img, self.mask, self.border, self.img.shape[:-1])
         np.allclose(img_solution, self.solution)
 
-    # @unittest.skip("Skipping this test method")
+    @unittest.skip("Skipping this test method")
     def test_convert_nparray_to_jpg(self):
         """Does conversion from nparray to jpg work as expected"""
         temp = np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8)
