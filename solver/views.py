@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+import json
 from rest_framework.views import APIView
 
 from .sudoku_solver import solve_board
@@ -25,14 +26,18 @@ class Sudoku_API(APIView):
 
     def post(self, request):
         try:
+            response_data = {
+                'image': None,  
+                'message': "",
+                'error': "",
+            }
             print("View")
             # get image from request
             if "puzzle" not in request.FILES:
+                response_data['message'] = "Puzzle file not supplied."
+                response_data['error'] = 'User must supply image of unsolved sudoku puzzle.'
                 return HttpResponse(
-                    {
-                        "message": "Puzzle file not supplied",
-                        "error": "User must supply image of unsolved sudoku puzzle.",
-                    },
+                    json.dumps(response_data),
                     status=400,
                 )
 
@@ -43,18 +48,18 @@ class Sudoku_API(APIView):
             print("Puzzle Type")
             # reject incorrect file types
             if not puzzle.name.lower().endswith((".jpg", ".jpeg", ".png")):
+                response_data['message'] = "Invalid file type, image must be a JPEG or PNG file."
+                response_data['error'] = 'Only JPEG and PNG file types are allowed.'
                 return HttpResponse(
-                    {
-                        "message": "Invalid file type, image must be a JPEG or PNG file.",
-                        "error": "Only JPEG, PNG, and BMP file types are allowed.",
-                    },
+                    json.dumps(response_data),
                     status=400,
                 )
 
             print("Convert")
             try:
                 # convert image into nparray
-                img = convert_file_to_nparray(puzzle)
+                puzzle_read = puzzle.read()
+                img = convert_file_to_nparray(puzzle_read)
             except Exception as e:
                 return HttpResponse(
                     {
@@ -119,6 +124,8 @@ class Sudoku_API(APIView):
             try:
                 # solve board
                 solved = solve_board(unsolved)
+                if solved is None:
+                    raise ValueError("Puzzle input could not be solved")
             except Exception as e:
                 return HttpResponse(
                     {
